@@ -45,17 +45,24 @@ complete2 <- select(complete2, "price", "bedrooms", "bathrooms", "floors",
                        "waterfront", "view", "grade", "lat", "sqft_living", "sqft_living15",
                        "sqft_above", "sqft_basement")
 
-# Dummify variables
-complete2 <- dummy_cols(complete2, select_columns = c("bedrooms", "bathrooms",
-                           "floors", "waterfront", "view", "grade", "lat"))
+# Transforming remaining varibles into factor for LR
+complete2$bathrooms <- as.factor(complete2$bathrooms)
+complete2$floors <- as.factor(complete2$floors)
+complete2$waterfront <- as.factor(complete2$waterfront)
+complete2$view <- as.factor(complete2$view)
+complete2$grade <- as.factor(complete2$grade)
 
-complete2$bedrooms = NULL
-complete2$bathrooms = NULL
-complete2$floors = NULL
-complete2$waterfront = NULL
-complete2$view = NULL
-complete2$grade = NULL
-complete2$lat = NULL
+# Dummify variables
+# complete2 <- dummy_cols(complete2, select_columns = c("bedrooms", "bathrooms",
+#                           "floors", "waterfront", "view", "grade", "lat"))
+
+# complete2$bedrooms = NULL
+# complete2$bathrooms = NULL
+# complete2$floors = NULL
+# complete2$waterfront = NULL
+# complete2$view = NULL
+# complete2$grade = NULL
+# complete2$lat = NULL
 
 # Unstack train and test
 train2 <- split(complete2, complete2$price > 0)
