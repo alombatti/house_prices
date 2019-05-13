@@ -14,3 +14,4 @@ baseline <- lm(formula = price ~ bedrooms +
                data = train2)
 
 summary(baseline)
+# hello i am trying
