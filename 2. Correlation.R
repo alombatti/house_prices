@@ -19,4 +19,4 @@ complete2 <- select(complete, "price", "bedrooms", "bathrooms", "sqft_living", "
                     "waterfront", "view", "grade", "sqft_above", "sqft_basement", "lat",
                     "sqft_living15", "condition", "yr_renovated", "zipcode")
 
-# to maybe remove: condition, yr_renovated, "zipcode"
+# to maybe remove: condition, yr_renovated, "zipcode" (because they don't respect > 0.15)
