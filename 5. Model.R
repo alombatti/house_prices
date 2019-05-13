@@ -11,7 +11,6 @@ baseline <- lm(formula = price ~ bedrooms +
                  sqft_living15 +
                  sqft_above +
                  sqft_basement,
-               data = train2)
+               data = train3)
 
 summary(baseline)
-# hello i am trying
