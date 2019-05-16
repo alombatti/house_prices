@@ -97,8 +97,13 @@ graph14 <- boxplot(train2[, "logprice"] ~ train2[, "sqft_living15"],
 
 # Last, we apply the changes to the dataset
 train2 <- train2[train2$bedrooms <= 10, ]
+test2 <- test2[test2$bedrooms <= 10, ]
+
 train2$sqft_basement[train2$sqft_basement != 0] = 1
+test2$sqft_basement[test2$sqft_basement != 0] = 1
+
 train2$yr_renovated[train2$yr_renovated != 0] = 1
+test2$yr_renovated[test2$yr_renovated != 0] = 1
 
 # And we stack back together train and test
 train2$logprice <- NULL

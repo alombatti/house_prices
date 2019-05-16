@@ -8,8 +8,8 @@ library(fastDummies)
 library(dplyr)
 
 # Read the data
-train <- read.csv("house_price_train.csv")
-test <- read.csv("house_price_test.csv")
+train <- read.csv("https://gist.githubusercontent.com/alombatti/f2cb8f1a244784999353309a97a6777f/raw/f38ee90641da97f62964ac10ea558564bfc6cb65/house_price_train.csv")
+test <- read.csv("https://gist.githubusercontent.com/alombatti/1df87e336f159842e64ced9380b13e25/raw/49ea0fe6b42fb5d4868e1291dc8e47b20d2cc3bd/house_price_test.csv")
 
 # Glimps of the datasets
 head(train)
