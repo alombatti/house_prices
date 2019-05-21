@@ -1,0 +1,39 @@
+---
+title: "Predicting House Prices"
+author: "Alberto Lombatti"
+date: "5/21/2019"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Data understanding
+
+This dataset contains house sale prices for King County, which includes Seattle, Washington. It includes homes sold between May 2014 and May 2015. The dataset provided to us has already been devided in train set and test set, in the sizes of 17277 observations for the train and 4320 observations for the test. The fields describing the data are:
+-id: a notation for a house
+-date: the date the house was sold
+-price: the prediction target, consisting in the amount in US dollars the house was sold at
+-bedrooms: the number of bedrooms in the house
+-bathrooms: the number of bathrooms in the house
+-sqft_living: square footage of the home
+-sqft_lot: square footage of the lot
+-floors: total floors (levels) in the house
+-waterfront: use which has a view to the waterfront
+-view: how many times the house has been viewed
+-condition: overall condition of the house
+-grade: overall grade given to the housing unit, based on King County grading system
+-sqft_above: square footage of house apart from basement
+-sqft_basement: square footage of the basement
+-yr_built: the year in which the house was completed
+-yr_renovated: year when house was renovated
+-zipcode: zip
+-lat: latitude coordinate
+-long: longitude coordinate
+-sqft_living15: living room area in 2015 (implies some renovations)
+
+```{r cars}
+summary(cars)
+```
+
