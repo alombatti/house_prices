@@ -210,3 +210,166 @@ graph3 <- boxplot(train2[, "logprice"] ~ train2[, "bedrooms"],
                   main = "Price vs Bedrooms", col=c("#F1C40F","#336633"),
                   xlab="bedrooms", ylab="log (price)")
 ```
+
+From this graph, we notice there are two odd values, when the bedrooms are 11 and when the bedrooms are 33.
+
+```{r}
+print(subset(train2, train2$bedrooms > 10))
+```
+
+In fact, we can see all the houses with a number of bedrooms bigger than 10 is just two, therefore we exclude these records from our analysis not to disturb our model.
+
+### Boxplot between price and bathrooms
+```{r}
+graph4 <- boxplot(train2[, "logprice"] ~ train2[, "bathrooms"],
+                  main = "Price vs Bathrooms", col=c("#F1C40F","#336633"),
+                  xlab="bathrooms", ylab="log (price)")
+```
+
+The relationship looks linear overall. Nonetheless, the price of the house with 7.5 bathrooms is relatively lower than its neighbours. Therefore, we decide to eliminate that value.
+
+### Boxplot between price and floors
+```{r}
+graph5 <- boxplot(train2[, "logprice"] ~ train2[, "floors"],
+                  main = "Price vs Floors", col=c("#F1C40F","#336633"),
+                  xlab="floors", ylab="log (price)")
+```
+
+The relationship is linear.
+
+### Boxplot between price and waterfront
+```{r}
+graph6 <- boxplot(train2[, "logprice"] ~ train2[, "waterfront"],
+                  main = "Price vs Waterfront", col=c("#F1C40F","#336633"),
+                  xlab="waterfront", ylab="log (price)")
+```
+
+The relationsip is linear. Here, the 0 rapresents the houses without a waterfront, while the value 1 rapresents the houses with a waterfront. It is common sense that, if the house has a waterfront, its price is higher.
+
+### Boxplot between price and view
+```{r}
+graph7 <- boxplot(train2[, "logprice"] ~ train2[, "view"],
+                  main = "Price vs View", col=c("#F1C40F","#336633"),
+                  xlab="view", ylab="log (price)")
+```
+
+The relationsip is linear. Here, the 0 rapresents the worst view, while the value 4 rapresents the best view. It is common sense that, the more beautiful the view, the higher the price of the house.
+
+### Boxplot between price and condition
+```{r}
+graph8 <- boxplot(train2[, "logprice"] ~ train2[, "condition"],
+                  main = "Price vs Condition", col=c("#F1C40F","#336633"),
+                  xlab="condition", ylab="log (price)")
+```
+
+The relationship is linear.
+
+### Boxplot between price and grade
+```{r}
+graph9 <- boxplot(train2[, "logprice"] ~ train2[, "grade"],
+                  main = "Price vs Grade", col=c("#F1C40F","#336633"),
+                  xlab="grade", ylab="log (price)")
+```
+
+The relationship is linear.
+
+### Boxplot between price and sqft_living
+```{r}
+graph10 <- boxplot(train2[, "logprice"] ~ train2[, "sqft_living"],
+                  main = "Price vs sqft_Living", col=c("#F1C40F","#336633"),
+                  xlab="sqft_living", ylab="log (price)")
+```
+
+The relationship looks linear. The bigger the living room, the higher the price of the house.
+
+### Boxplot between price and sqft_basement
+```{r}
+graph11 <- boxplot(train2[, "logprice"] ~ train2[, "sqft_basement"],
+                   main = "Price vs sqft_Basement", col=c("#F1C40F","#336633"),
+                   xlab="sqft_basement", ylab="log (price)")
+```
+
+This graph is interesting. Here, we can see that a lot of houses do not have a basement at all, while tbe houses that have a basement, even if the size of the basement changes a lot, their prices do not really change.
+```{r}
+length(train2$sqft_basement[train2$sqft_basement == 0])
+```
+
+```{r}
+length(train2$sqft_basement[train2$sqft_basement != 0])
+```
+
+Therefore, I decided to simplify this field and make it a boolean: it will take value 0 if the house does not have a basement, and it will take value 1 if the house has a basement, no matter its size.
+
+### Boxplot between price and yr_renovated
+```{r}
+graph12 <- boxplot(train2[, "logprice"] ~ train2[, "yr_renovated"],
+                   main = "Price vs yr_Renovated", col=c("#F1C40F","#336633"),
+                   xlab="yr_renovated", ylab="log (price)")
+```
+
+This graph is very similar to the previous one regarding the basement situation. As for having a basement or not, the same reasoning can be applied to the renovation of the house. It does not really matter when the house has been renovated, but what matters is if the house has been renovated at all.
+```{r}
+length(train2$yr_renovated[train2$yr_renovated == 0])
+```
+
+```{r}
+length(train2$yr_renovated[train2$yr_renovated != 0])
+```
+
+As we can see, most of the houses have not been renovated, so we will transform this field into boolean.
+
+### Boxplot between price and zipcode
+```{r}
+graph13 <- boxplot(train2[, "logprice"] ~ train2[, "zipcode"],
+                   main = "Price vs Zipcode", col=c("#F1C40F","#336633"),
+                   xlab="zipcode", ylab="log (price)")
+```
+
+We can not really see a pattern in this graph, so we will categorize the variable when modelling (as predicted before).
+
+### Boxplot between price and sqft_living15
+```{r}
+graph14 <- boxplot(train2[, "logprice"] ~ train2[, "sqft_living15"],
+                   main = "Price vs sqft_Living(15)", col=c("#F1C40F","#336633"),
+                   xlab="sqft_living(15)", ylab="log (price)")
+```
+
+As for the variable *sqft_living*, we see a direct relationship in this graph. As the area of the living room increases, the price ofthe house increases as well.
+
+***
+***
+***
+
+Given all the insights from the data visualization section, we can proceed in apply the changes to our dataset.
+
+First, as seen in the graph for the bathrooms, we eliminate the bathroom with value 7.5 because its price was odd and probably it was a mistake.
+```{r}
+train2 <- train2[-5419, ]
+```
+
+Then, as seen in the graph for the bedrooms, we only keep those house with 10 or less bedrooms, since the two houses with 11 and 33 bedrooms had wrong values for their price.
+```{r}
+train2 <- train2[train2$bedrooms <= 10, ]
+```
+
+We dummify the *sqft_basement* field, transforming all the houses with a basement with value 1, and keeping all the houses without a basement with value 0.
+```{r}
+train2$sqft_basement[train2$sqft_basement != 0] = 1
+test2$sqft_basement[test2$sqft_basement != 0] = 1
+```
+
+We dummify the *yr_renovated* field, transforming all the houses that has been renovated with value 1, and keeping all the houses without renovation with value 0.
+```{r}
+train2$yr_renovated[train2$yr_renovated != 0] = 1
+test2$yr_renovated[test2$yr_renovated != 0] = 1
+```
+
+***
+***
+***
+
+Lastly, we stack back together the train and test set.
+```{r}
+train2$logprice <- NULL
+complete2 <- Stack(train2, test2)
+```
