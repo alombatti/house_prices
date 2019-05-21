@@ -2,38 +2,211 @@
 title: "Predicting House Prices"
 author: "Alberto Lombatti"
 date: "5/21/2019"
-output: pdf_document
+output: html_document
 ---
 
-```{r setup, include=FALSE}
+```{r setup, include = FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## Data understanding
-
-This dataset contains house sale prices for King County, which includes Seattle, Washington. It includes homes sold between May 2014 and May 2015. The dataset provided to us has already been devided in train set and test set, in the sizes of 17277 observations for the train and 4320 observations for the test. The fields describing the data are:
--id: a notation for a house
--date: the date the house was sold
--price: the prediction target, consisting in the amount in US dollars the house was sold at
--bedrooms: the number of bedrooms in the house
--bathrooms: the number of bathrooms in the house
--sqft_living: square footage of the home
--sqft_lot: square footage of the lot
--floors: total floors (levels) in the house
--waterfront: use which has a view to the waterfront
--view: how many times the house has been viewed
--condition: overall condition of the house
--grade: overall grade given to the housing unit, based on King County grading system
--sqft_above: square footage of house apart from basement
--sqft_basement: square footage of the basement
--yr_built: the year in which the house was completed
--yr_renovated: year when house was renovated
--zipcode: zip
--lat: latitude coordinate
--long: longitude coordinate
--sqft_living15: living room area in 2015 (implies some renovations)
-
-```{r cars}
-summary(cars)
+### Libraries used
+These are the libraries I have used in order to complete the project
+```{r, warning = FALSE, message = FALSE}
+library(ggplot2)
+library(corrplot)
+library(Stack)
+library(fastDummies)
+library(dplyr)
 ```
 
+
+### Import the data
+The data is uploaded on a gist, and we store it in two data.frame objects called _train_ and _test_
+```{r}
+train <- read.csv("https://gist.githubusercontent.com/alombatti/f2cb8f1a244784999353309a97a6777f/raw/f38ee90641da97f62964ac10ea558564bfc6cb65/house_price_train.csv")
+```
+
+```{r}
+test <- read.csv("https://gist.githubusercontent.com/alombatti/1df87e336f159842e64ced9380b13e25/raw/49ea0fe6b42fb5d4868e1291dc8e47b20d2cc3bd/house_price_test.csv")
+```
+
+## Data understanding
+This dataset contains house sale prices for King County, which includes Seattle, Washington. It includes homes sold between May 2014 and May 2015. The dataset provided to us has already been devided in train set and test set, in the sizes of 17277 observations for the train and 4320 observations for the test.
+
+The fields describing the data are:
+
+1. __id__: a notation for a house
+2. __date__: the date the house was sold
+3. __price__: the prediction target, consisting in the amount in US Dollars the house was sold at
+4. __bedrooms__: the number of bedrooms in the house
+5. __bathrooms__: the number of bathrooms in the house
+6. __sqft_living__: square footage of the home
+7. __sqft_lot__: square footage of the lot
+8. __floors__: total floors (levels) in the house
+9. __waterfront__: use which has a view to the waterfront
+10. __view__: how many times the house has been viewed
+11. __condition__: overall condition of the house
+12. __grade__: overall grade given to the housing unit, based on King County grading system
+13. __sqft_above__: square footage of house apart from basement
+14. __sqft_basement__: square footage of the basement
+15. ___yr_built__: the year in which the house was completed
+16. __yr_renovated__: year when house was renovated
+17. __zipcode__: zip
+18. __lat__: latitude coordinate
+19. __long__: longitude coordinate
+20. __sqft_living15__: living room area in 2015 (if different fron sqft_living, it implies some renovations)
+21. __sqft_lot15__: lot area in 2015 (if different from sqft_lot, it implies some renovations)
+
+*** 
+
+Here is a glimpse of what the __STRUCTURE__ of the data looks like (for the train set)
+```{r}
+str(train)
+```
+
+*** 
+
+We then check for NAs in the data we are going to use, both in the train and in the test.
+```{r}
+print(length(which(is.na(train) == T)))
+print(length(which(is.na(test) == T)))
+```
+As we can see, the data does not contain any null values, so we can proceed with our analysis.
+
+### Transformation of the DATE field
+
+In order to analyze the field _DATE_, and to be able to determine whether it is relevant in our analysis, we have to transform it so that we can use it.
+I thought of separating the fields year, month, and day, to, further in the analysis, determine if any of them is directly correlated with the price.
+
+First, I change the field _date_ from factor to date, and I store in a new dataframe the complete field of the date, its year, its month, and its day.
+Then, I merge the newly created dataset with the one from which I extracted the date field, and I reorder the column in a way that makes sense for the analyais.
+
+I repeat the same procedure for the _test_ and the _train_ datasets.
+```{r}
+train$date <- as.Date(train$date, "%m/%d/%Y")
+df.date_train <- data.frame(date = train$date,
+                      year = as.numeric(format(train$date, format = "%Y")),
+                      month = as.numeric(format(train$date, format = "%m")),
+                      day = as.numeric(format(train$date, format = "%d")))
+
+train <- unique(merge(train, df.date_train))
+rm(df.date_train)
+train <- train[, c(2, 1, 22, 23, 24, 3:21)]
+```
+
+```{r}
+test$date <- as.Date(test$date, "%m/%d/%Y")
+df.date_test <- data.frame(date = test$date,
+                           year = as.numeric(format(test$date, format = "%Y")),
+                           month = as.numeric(format(test$date, format = "%m")),
+                           day = as.numeric(format(test$date, format = "%d")))
+
+test <- unique(merge(test, df.date_test))
+rm(df.date_test)
+test <- test[, c(2, 1, 21, 22, 23, 3:20)]
+```
+
+***
+
+Now I stack together the train and test dataset to procede with a more accurate analysis. I also eliminate the field __id__ and __date__ because they are not going to be relevant.
+```{r}
+complete <- Stack(train, test)
+complete$id = NULL
+complete$date = NULL
+```
+
+The dataset now looks like this:
+```{r}
+head(complete)
+```
+
+## Correlation matrix
+Now I plot a correlation graph to see how much the different variables are correlated to our target variable _PRICE_
+```{r}
+corr = cor(train[, 3:24])
+
+corrplot(corr, method = "color",
+         outline = T,
+         cl.pos = "n",
+         rect.col = "black",
+         tl.col = "indianred4",
+         addCoef.col = "black",
+         number.digits = 2,
+         number.cex = 0.60,
+         tl.cex = 0.7,
+         cl.cex = 1,
+         col = colorRampPalette(c("red", "white", "green4")) (100))
+```
+
+From the matrix, we can see that we have many variables correlated somehow with price, some more and some less. I decided to proceed my analysis keeoing only the variables that have a correlation >= 0.15 with the target variable.
+
+Therefore, going forward I will only keep:
+
+1. price
+2. bedrooms
+3. bathrooms
+4. sqft_living
+5. floors
+6. waterfront
+7. view
+8. grade
+9. sqft_above
+10. sqft_basement
+11. lat
+12. sqft_living15
+
+Nonetheless, some considerations have to be made. The variables __condition__, __yr_renovated__, and __zipcode__ are going to be converted as factors further on in the analysis. Therefore, we still include them in the listof variables we are going to keep because we can not really interepret their value now since it is numeric, and as numeric it might not affect the correlation with _price_.
+```{r}
+complete2 <- select(complete, "price", "bedrooms", "bathrooms", "sqft_living", "floors",
+                    "waterfront", "view", "grade", "sqft_above", "sqft_basement", "lat",
+                    "sqft_living15", "condition", "yr_renovated", "zipcode")
+```
+
+## Data Visualization
+
+In this section we are going to analyze the relationship of all the varaibles with our target, the variable _price_. Before doing this, I create a copy of the dataset, and I split it in *train* and *test*, based on the value of the variable price.
+```{r}
+complete2 <- complete
+
+train2 <- split(complete2, complete2$price > 0)
+train2 <- train2[["TRUE"]]
+
+test2 <- split(complete2, is.na(complete2$price))
+test2 <- test2[["TRUE"]]
+```
+
+### Distribution of prices
+Here we look at the histrogram showing how many houses have been sold for each price.
+```{r, message = FALSE}
+graph1 <- ggplot(data = train2, aes(x = price)) +    
+  geom_histogram(alpha = 0.8, fill = "#F1C40F") +
+  labs(x = "price", y = "houses", title = "Distribution of Prices") +
+  theme_bw()
+
+graph1
+```
+
+Since the interval of price of the houses is very wide, it is smart to focus only on a small segment, to see the patten where most of the houses are. In this histogram, we only see the distribution of houses sold at a price up to 1.5 million US Dollars.
+```{r, message = FALSE, warning = FALSE}
+graph2 <- ggplot(data = train2, aes(x = price)) +    
+  geom_histogram(alpha = 0.8, fill = "#F1C40F") +
+  scale_x_continuous(limits=c(0, 1.5e6)) +
+  labs(x = "price", y = "houses", title = "Distribution of Prices (up to 1.5 million)") +
+  theme_bw()
+
+graph2
+```
+
+***
+
+For the sole purpose of data visualization, I now add a comuln to my _train_ dataframe rapresenting the __logarithmic transformation__ of the price, so that the graphs will look prettier and more understandable.
+```{r, message = FALSE, warning = FALSE}
+train2$logprice = log(train2$price)
+```
+
+### Boxplot between price and bedrooms
+```{r}
+graph3 <- boxplot(train2[, "logprice"] ~ train2[, "bedrooms"],
+                  main = "Price vs Bedrooms", col=c("#F1C40F","#336633"),
+                  xlab="bedrooms", ylab="log (price)")
+```

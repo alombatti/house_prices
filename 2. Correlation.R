@@ -22,4 +22,4 @@ complete2 <- select(complete, "price", "bedrooms", "bathrooms", "sqft_living", "
 # to maybe remove: condition, yr_renovated, "zipcode" (because they don't respect > 0.15)
 # As we transform them in factors later in the project (after EDA), we can't relly exclude them
 # because the corr matrix takes them into consideration as numeric values, and as numeric they
-# might not have any correlation. But as factor they could have, so we keep them.
+# might not have any correlation. But as factor they could have, so we keep them
