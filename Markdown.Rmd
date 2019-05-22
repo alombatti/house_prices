@@ -18,6 +18,7 @@ library(Stack)
 library(fastDummies)
 library(dplyr)
 library(leaflet)
+library(caret)
 ```
 
 
@@ -167,24 +168,26 @@ complete2 <- select(complete, "price", "bedrooms", "bathrooms", "sqft_living", "
 
 This is an interactive map with all the houses based on their geographical position, coloured by their price.
 ```{r}
-complete$PriceBin<-cut(complete$price, c(0,250e3,500e3,750e3,1e6,2e6,999e6))
+complete$PriceBin <- cut(complete$price, c(0, 250e3, 500e3, 750e3, 1e6, 2e6, 999e6))
 
-center_lon = median(complete$long,na.rm = TRUE)
-center_lat = median(complete$lat,na.rm = TRUE)
+center_lon = median(complete$long, na.rm = TRUE)
+center_lat = median(complete$lat, na.rm = TRUE)
 
-factpal <- colorFactor(c("black","blue","yellow","orange","#0B5345","red"), 
-                      complete$PriceBin)
+factpal <- colorFactor(c("black", "blue", "yellow", "orange", "#0B5345", "red"),
+                       complete$PriceBin)
 
 
 
 leaflet(complete) %>% addProviderTiles("Esri.NatGeoWorldMap") %>%
-  addCircles(lng = ~long, lat = ~lat, 
-             color = ~factpal(PriceBin))  %>%
-  setView(lng=center_lon, lat=center_lat,zoom = 12) %>%
+  addCircles(lng = ~ long, lat = ~ lat, 
+             color = ~ factpal(PriceBin))  %>%
+  setView(lng = center_lon, lat = center_lat, zoom = 12) %>%
   
-  addLegend("bottomright", pal = factpal, values = ~PriceBin,
+  addLegend("bottomright", pal = factpal, values = ~ PriceBin,
             title = "House Price Distribution",
             opacity = 1)
+
+complete$PriceBin <- NULL
 ```
 
 In this section we are going to analyze the relationship of all the varaibles with our target, the variable _price_. Before doing this, I create a copy of the dataset, and I split it in *train* and *test*, based on the value of the variable price.
@@ -477,23 +480,30 @@ test3 <- test3[["TRUE"]]
 ```
 
 ## Model
-I decided to use a **linear regression** model on the train dataset with all the variables available.
+I decided to use a **linear regression** model.
+
+First, I create a dataset with all the variables I am going to need in my model.
 ```{r}
-model1 <- lm(formula = price ~ bedrooms +
-               bathrooms +
-               sqft_living +
-               floors +
-               waterfront +
-               view +
-               grade +
-               sqft_above +
-               sqft_basement +
-               sqft_living15 +
-               lat +
-               condition +
-               yr_renovated +
-               zipcode,
-               data = train3)
+train4 <- train3[, c("bedrooms", "bathrooms", "sqft_living", "floors", "waterfront", "view",
+                     "grade", "sqft_above", "sqft_living15", "lat", "condition",
+                     "yr_renovated", "zipcode", "price")]
+test4 <- test3
+```
+
+Then, I set up the settings for my model:
+```{r}
+formula = price ~ .
+
+fitControl <- trainControl(method="cv",number = 5)
+```
+
+And last, I run my model.
+```{r, warning = FALSE}
+model1 <- train(formula,
+                data = train4,
+                method = "lm",
+                trControl = fitControl,
+                metric = "MAE")
 ```
 
 The model scores an R2 of 0.84, which is a relatively good result.
@@ -501,34 +511,10 @@ The model scores an R2 of 0.84, which is a relatively good result.
 summary(model1)
 ```
 
-I notice that the variable **sqft_basement** is not significant, so I re-model without that variable.
-```{r}
-model2 <- lm(formula = price ~ bedrooms +
-               bathrooms +
-               sqft_living +
-               floors +
-               waterfront +
-               view +
-               grade +
-               sqft_above +
-               sqft_living15 +
-               lat +
-               condition +
-               yr_renovated +
-               zipcode,
-               data = train3)
-```
-
-```{r}
-summary(model2)
-```
-
-Unfortunately, after taking out *sqtf_basement*, the model did not improve.
-
 Then, we fit the model to our dataset to predict the price of every house in the train dataset, to see if they reflect the actual value.
 ```{r}
-train3_fit <- fitted(model2)
-train3$pred <- train3_fit
+train4_fit <- fitted(model1)
+train4$pred <- train4_fit
 ```
 
 We have to score our model on the **MAPE**, which is the mean absolute percentage error. The lowest this number, the better the model.
@@ -539,11 +525,11 @@ mape <- function(real, predicted) {
 ```
 
 ```{r}
-mape(train3$price, train3$pred)
+mape(train4$price, train4$pred)
 ```
 We get a MAPE score of `r mape(train3$price, train3$pred)`, which is very good for our model.
 
 Last, with our model we predictthe prices in the test dataset.
-```{r}
-test3$price <- predict(model2, test3)
+```{r, warnings = FALSE}
+test4$price <- predict(model1, test4)
 ```
