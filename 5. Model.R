@@ -9,7 +9,6 @@ model1 <- lm(formula = price ~ bedrooms +
                view +
                grade +
                sqft_above +
-               sqft_basement +
                sqft_living15 +
                lat +
                condition +

@@ -17,6 +17,7 @@ library(corrplot)
 library(Stack)
 library(fastDummies)
 library(dplyr)
+library(leaflet)
 ```
 
 
@@ -163,6 +164,28 @@ complete2 <- select(complete, "price", "bedrooms", "bathrooms", "sqft_living", "
 ```
 
 ## Data Visualization
+
+This is an interactive map with all the houses based on their geographical position, coloured by their price.
+```{r}
+complete$PriceBin<-cut(complete$price, c(0,250e3,500e3,750e3,1e6,2e6,999e6))
+
+center_lon = median(complete$long,na.rm = TRUE)
+center_lat = median(complete$lat,na.rm = TRUE)
+
+factpal <- colorFactor(c("black","blue","yellow","orange","#0B5345","red"), 
+                      complete$PriceBin)
+
+
+
+leaflet(complete) %>% addProviderTiles("Esri.NatGeoWorldMap") %>%
+  addCircles(lng = ~long, lat = ~lat, 
+             color = ~factpal(PriceBin))  %>%
+  setView(lng=center_lon, lat=center_lat,zoom = 12) %>%
+  
+  addLegend("bottomright", pal = factpal, values = ~PriceBin,
+            title = "House Price Distribution",
+            opacity = 1)
+```
 
 In this section we are going to analyze the relationship of all the varaibles with our target, the variable _price_. Before doing this, I create a copy of the dataset, and I split it in *train* and *test*, based on the value of the variable price.
 ```{r}
@@ -372,4 +395,155 @@ Lastly, we stack back together the train and test set.
 ```{r}
 train2$logprice <- NULL
 complete2 <- Stack(train2, test2)
+```
+
+## Data Transformation
+
+I create a copy of the complete dataset to proceed with the analysis.
+```{r}
+complete3 <- complete2
+```
+
+Now, it is time to __standardize__ the variables involving the squarefeet. I create a function that normalizes the value of the field between 0 and 1, 0 being the lowest value and 1 being the highest.
+```{r}
+range01 <- function(x) {
+  (x-min(x)) / (max(x)-min(x))
+}
+```
+
+Therefore, I can proceed with the normalization of the variables **sqft_living**, **sqft_above**, and **sqft_living15**.
+```{r}
+complete3$sqft_living <- range01(complete3$sqft_living)
+```
+
+```{r}
+complete3$sqft_above <- scale(complete3$sqft_above)
+```
+
+```{r}
+complete3$sqft_living15 <- scale(complete3$sqft_living15)
+```
+
+***
+
+In order to proceed with the design of the model, I transform __as factor__ the following variables because they do not make sense as numeric in this context:
+
+1. bathrooms
+2. floors
+3. waterfront
+4. view
+5. grade
+6. sqft_basement
+7. yr_renovated
+8. condition
+9. zipcode
+```{r}
+complete3$bedrooms <- as.factor(complete2$bedrooms)
+complete3$bathrooms <- as.factor(complete2$bathrooms)
+complete3$floors <- as.factor(complete2$floors)
+complete3$waterfront <- as.factor(complete2$waterfront)
+complete3$view <- as.factor(complete2$view)
+complete3$grade <- as.factor(complete2$grade)
+complete3$sqft_basement <- as.factor(complete3$sqft_basement)
+complete3$yr_renovated <- as.factor(complete3$yr_renovated)
+complete3$condition <- as.factor(complete3$condition)
+complete3$zipcode <- as.factor(complete3$zipcode)
+```
+
+Another variable that does not make sense to take as numeric is **lat**. Nonetheless, we can not consider it as factor neither because of the too many values it takes.
+
+Therefore, we _bin_ the factor in 13 intervals.
+```{r}
+breaks_lat <- c(-Inf, 47.20, 47.25, 47.30, 47.35, 47.40, 47.45, 47.50, 47.55, 47.60,
+                47.65, 47.70, 47.75, Inf)
+
+names_lat <- c("47.15 - 47.20", "47.20 - 47.25", "47.25 - 47.30", "47.30 - 47.35",
+               "47.35 - 47.40", "47.40 - 47.45", "47.45 - 47.50", "47.50 - 47.55",
+               "47.55 - 47.60", "47.60 - 47.65", "47.65 - 47.70", "47.70 - 47.75",
+               "47.75 - 47.80")
+
+complete3$lat <- cut(complete3$lat, breaks = breaks_lat, labels = names_lat)
+```
+
+***
+
+In the end, I unstack the train and test dataset from the complete dataset to build our model.
+```{r}
+train3 <- split(complete3, complete3$price > 0)
+train3 <- train3[["TRUE"]]
+
+test3 <- split(complete3, is.na(complete3$price))
+test3 <- test3[["TRUE"]]
+```
+
+## Model
+I decided to use a **linear regression** model on the train dataset with all the variables available.
+```{r}
+model1 <- lm(formula = price ~ bedrooms +
+               bathrooms +
+               sqft_living +
+               floors +
+               waterfront +
+               view +
+               grade +
+               sqft_above +
+               sqft_basement +
+               sqft_living15 +
+               lat +
+               condition +
+               yr_renovated +
+               zipcode,
+               data = train3)
+```
+
+The model scores an R2 of 0.84, which is a relatively good result.
+```{r}
+summary(model1)
+```
+
+I notice that the variable **sqft_basement** is not significant, so I re-model without that variable.
+```{r}
+model2 <- lm(formula = price ~ bedrooms +
+               bathrooms +
+               sqft_living +
+               floors +
+               waterfront +
+               view +
+               grade +
+               sqft_above +
+               sqft_living15 +
+               lat +
+               condition +
+               yr_renovated +
+               zipcode,
+               data = train3)
+```
+
+```{r}
+summary(model2)
+```
+
+Unfortunately, after taking out *sqtf_basement*, the model did not improve.
+
+Then, we fit the model to our dataset to predict the price of every house in the train dataset, to see if they reflect the actual value.
+```{r}
+train3_fit <- fitted(model2)
+train3$pred <- train3_fit
+```
+
+We have to score our model on the **MAPE**, which is the mean absolute percentage error. The lowest this number, the better the model.
+```{r}
+mape <- function(real, predicted) {
+  return(mean(abs((real - predicted) / real)))
+}
+```
+
+```{r}
+mape(train3$price, train3$pred)
+```
+We get a MAPE score of `r mape(train3$price, train3$pred)`, which is very good for our model.
+
+Last, with our model we predictthe prices in the test dataset.
+```{r}
+test3$price <- predict(model2, test3)
 ```

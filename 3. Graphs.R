@@ -3,6 +3,27 @@
 # Creating a copy of the dataframe to apply EDA changes
 complete2 <- complete
 
+# Google maps of the houses
+complete$PriceBin<-cut(complete$price, c(0,250e3,500e3,750e3,1e6,2e6,999e6))
+
+center_lon = median(complete$long,na.rm = TRUE)
+center_lat = median(complete$lat,na.rm = TRUE)
+
+factpal <- colorFactor(c("black","blue","yellow","orange","#0B5345","red"), 
+                      complete$PriceBin)
+
+
+
+leaflet(complete) %>% addProviderTiles("Esri.NatGeoWorldMap") %>%
+  addCircles(lng = ~long, lat = ~lat, 
+             color = ~factpal(PriceBin))  %>%
+  # controls
+  setView(lng=center_lon, lat=center_lat,zoom = 12) %>%
+  
+  addLegend("bottomright", pal = factpal, values = ~PriceBin,
+            title = "House Price Distribution",
+            opacity = 1)
+
 # Unstack train and test
 train2 <- split(complete2, complete2$price > 0)
 train2 <- train2[["TRUE"]]
