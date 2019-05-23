@@ -22,11 +22,6 @@ hist(complete3$sqft_above)
 complete3$sqft_living15 <- scale(complete3$sqft_living15)
 hist(complete3$sqft_living15)
 
-# Binning bedrooms
-breaks_bed <- c(-Inf, 1, 2, 3, 4, 5, 6, Inf)
-names_bed <- c("1", "2", "3", "4", "5", "6", "7-33")
-complete3$bedrooms <- cut(complete3$bedrooms, breaks = breaks_bed, labels = names_bed)
-
 # Binning lat
 breaks_lat <- c(-Inf, 47.20, 47.25, 47.30, 47.35, 47.40, 47.45, 47.50, 47.55, 47.60,
                 47.65, 47.70, 47.75, Inf)
