@@ -527,7 +527,7 @@ mape <- function(real, predicted) {
 ```{r}
 mape(train4$price, train4$pred)
 ```
-We get a MAPE score of `r mape(train3$price, train3$pred)`, which is very good for our model.
+We get a MAPE score of `r round(mape(train4$price, train4$pred), 3)`, which is very good for our model.
 
 Last, with our model we predictthe prices in the test dataset.
 ```{r, warnings = FALSE}
