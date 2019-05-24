@@ -34,4 +34,4 @@ mape <- function(real, predicted) {
 mape(train4$price, train4$pred)
 
 # We predict the prices on the test dataset
-test4$price <- predict(model1, test4)
+# test4$price <- predict(model1, test4)

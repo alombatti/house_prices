@@ -8,11 +8,6 @@ train5 <- train3[, c("bedrooms", "bathrooms", "sqft_living", "floors", "waterfro
 test5 <- test3
 
 random_forest <- randomForest(formula,
-                              data = train6)
+                              data = train5)
 
-train5_fit <- fitted(random_forest)
-train5$pred <- train5_fit
-
-mape(train5$price, train5$pred)
-
-summary(random_forest)
+random_forest # I get a R2 of 0.8044
