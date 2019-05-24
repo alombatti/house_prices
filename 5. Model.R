@@ -1,4 +1,4 @@
-# BASELINE
+# LINEAR REGRESSION
 
 # To complete our analysis, we run the moden on a dataset with the selected variables
 train4 <- train3[, c("bedrooms", "bathrooms", "sqft_living", "floors", "waterfront", "view",
@@ -9,9 +9,9 @@ test4 <- test3
 # Settings for the model
 formula = price ~ .
 
-fitControl <- trainControl(method="cv",number = 5)
+fitControl <- trainControl(method = "cv", number = 5)
 
-# Linear Regression to predict price based on the folloeing variables
+# Linear Regression to predict price based on the following variables
 model1 <- train(formula,
                 data = train4,
                 method = "lm",

@@ -1,26 +1,18 @@
-# Settings for the model
-formula = price ~ .
+# RANDOM FOREST
 
-ctrl <- trainControl(
-  method = "cv",
-  number = 10,
-  savePredictions=TRUE
-)
+library(randomForest)
 
-tuneGrid=data.table(expand.grid(mtry=c(5,15),
-                                splitrule='variance',
-                                min.node.size=c(2,5,10)))
+train5 <- train3[, c("bedrooms", "bathrooms", "sqft_living", "floors", "waterfront", "view",
+                     "grade", "sqft_above", "sqft_living15", "lat", "condition",
+                     "yr_renovated", "price")]
+test5 <- test3
 
-# Linear Regression to predict price based on the folloeing variables
-model1 <- train(formula,
-                data = train4,
-                method = "ranger",
-                num.trees=50,
-                preProc = NULL, 
-                tuneGrid = tuneGrid,
-                trControl = ctrl,
-                metric = "MAPE")
+random_forest <- randomForest(formula,
+                              data = train6)
 
-# The model scores an R2 of 0.84
-summary(model1)
-model1
+train5_fit <- fitted(random_forest)
+train5$pred <- train5_fit
+
+mape(train5$price, train5$pred)
+
+summary(random_forest)

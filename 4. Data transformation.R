@@ -32,6 +32,7 @@ names_lat <- c("47.15 - 47.20", "47.20 - 47.25", "47.25 - 47.30", "47.30 - 47.35
 complete3$lat <- cut(complete3$lat, breaks = breaks_lat, labels = names_lat)
 
 # Transforming remaining varibles into factor for LR
+complete3$bedrooms <- as.factor(complete2$bedrooms)
 complete3$bathrooms <- as.factor(complete2$bathrooms)
 complete3$floors <- as.factor(complete2$floors)
 complete3$waterfront <- as.factor(complete2$waterfront)
