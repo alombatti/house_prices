@@ -19,6 +19,7 @@ library(fastDummies)
 library(dplyr)
 library(leaflet)
 library(caret)
+library(randomForest)
 ```
 
 
@@ -441,12 +442,12 @@ In order to proceed with the design of the model, I transform __as factor__ the 
 8. condition
 9. zipcode
 ```{r}
-complete3$bedrooms <- as.factor(complete2$bedrooms)
-complete3$bathrooms <- as.factor(complete2$bathrooms)
-complete3$floors <- as.factor(complete2$floors)
-complete3$waterfront <- as.factor(complete2$waterfront)
-complete3$view <- as.factor(complete2$view)
-complete3$grade <- as.factor(complete2$grade)
+complete3$bedrooms <- as.factor(complete3$bedrooms)
+complete3$bathrooms <- as.factor(complete3$bathrooms)
+complete3$floors <- as.factor(complete3$floors)
+complete3$waterfront <- as.factor(complete3$waterfront)
+complete3$view <- as.factor(complete3$view)
+complete3$grade <- as.factor(complete3$grade)
 complete3$sqft_basement <- as.factor(complete3$sqft_basement)
 complete3$yr_renovated <- as.factor(complete3$yr_renovated)
 complete3$condition <- as.factor(complete3$condition)
@@ -479,7 +480,9 @@ test3 <- split(complete3, is.na(complete3$price))
 test3 <- test3[["TRUE"]]
 ```
 
-## Model
+## Modelling
+
+### (1) Linear regression
 I decided to use a **linear regression** model.
 
 First, I create a dataset with all the variables I am going to need in my model.
@@ -529,7 +532,107 @@ mape(train4$price, train4$pred)
 ```
 We get a MAPE score of `r round(mape(train4$price, train4$pred), 3)`, which is very good for our model.
 
+### (2) Random Forest
+Now I try a random forest to see if my score increases.
+
+I set model with 500 trees.
+```{r}
+train5 <- train3[, c("bedrooms", "bathrooms", "sqft_living", "floors", "waterfront", "view",
+                     "grade", "sqft_above", "sqft_living15", "lat", "condition",
+                     "yr_renovated", "price")]
+test5 <- test3
+```
+
+```{r}
+model2 <- randomForest(formula,
+                       data = train5)
+```
+
+```{r}
+model2
+```
+The model scores an R2 of 0.8044, not better than the linear model I run before (1).
+
+### (3) Linear model (with log)
+
 Last, with our model we predictthe prices in the test dataset.
 ```{r, warnings = FALSE}
 test4$price <- predict(model1, test4)
+```
+
+### (3) Linear regression with LOG
+Now I try a __linear regression__ with the log of prices.
+
+First, I create a dataset with all the variables I am going to need in my model.
+```{r}
+train6 <- train3[, c("bedrooms", "bathrooms", "sqft_living", "floors", "waterfront", "view",
+                     "grade", "sqft_above", "sqft_living15", "lat", "condition",
+                     "yr_renovated", "zipcode", "price")]
+test6 <- test3
+```
+
+Then, I transform the variables *prices* with the **log**
+```{r}
+train6$price <- log(train6$price)
+test6$price <- log(test6$price)
+```
+
+And last, I run my model.
+```{r, warning = FALSE}
+model3 <- train(formula,
+                data = train6,
+                method = "lm",
+                trControl = fitControl,
+                metric = "MAE")
+```
+
+This model turns out to be the best, with an R2 of 0.88.
+```{r}
+summary(model3)
+```
+
+Then, we fit the model to our dataset to predict the price of every house in the train dataset, to see if they reflect the actual value.
+```{r}
+train6_fit <- fitted(model3)
+train6$pred <- train6_fit
+```
+
+Now we turn the prices back to normal, using the exponential function.
+```{r}
+train6$price <- exp(train6$price)
+train6$pred <- exp(train6$pred)
+```
+
+We have to score our model on the **MAPE**, which is the mean absolute percentage error. The lowest this number, the better the model.
+```{r}
+mape <- function(real, predicted) {
+  return(mean(abs((real - predicted) / real)))
+}
+```
+
+```{r}
+mape(train6$price, train6$pred)
+```
+We get a MAPE score of `r round(mape(train6$price, train6$pred), 3)`, which is very good for our model.
+
+### Predict on the test set and export it
+The third model was the best we got so far, with an R2 of 0.88 and a MAPE of 0.13, so we decide to deploy this one.
+
+Now we predict the prices on the test dataset.
+```{r}
+test6$price <- predict(model3, test6)
+```
+
+And I transform my test dataframe with just the ID and the price predicted.
+```{r}
+test6 <- test6[, c("price")]
+test <- test[, c("id")]
+
+sumbission <- data.frame(test, test6)
+names(sumbission) <- c("id", "price")
+```
+
+Last, I export my dataframe as a csv file.
+```{r}
+write.csv(sumbission, "Alberto_Lombatti_submission.csv")
 ```

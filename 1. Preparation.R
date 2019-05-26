@@ -7,7 +7,8 @@ library(Stack)
 library(fastDummies)
 library(dplyr)
 library(leaflet)
-library(caret) # for LM
+library(caret)
+library(randomForest)
 
 # Read the data
 train <- read.csv("https://gist.githubusercontent.com/alombatti/f2cb8f1a244784999353309a97a6777f/raw/f38ee90641da97f62964ac10ea558564bfc6cb65/house_price_train.csv")

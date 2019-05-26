@@ -32,6 +32,3 @@ mape <- function(real, predicted) {
 
 # We score the MAPE on our actual and predicted values
 mape(train4$price, train4$pred)
-
-# We predict the prices on the test dataset
-# test4$price <- predict(model1, test4)
