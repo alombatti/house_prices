@@ -1,7 +1,7 @@
 # 3. DATA VISUALIZATION
 
 # Creating a copy of the dataframe to apply EDA changes
-# complete2 <- complete
+complete2 <- complete
 
 # Google maps of the houses
 complete$PriceBin <- cut(complete$price, c(0, 250e3, 500e3, 750e3, 1e6, 2e6, 999e6))

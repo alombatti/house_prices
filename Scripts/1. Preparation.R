@@ -50,8 +50,5 @@ test <- test[, c(2, 1, 21, 22, 23, 3:20)]
 # Stacking the two datasets together
 complete <- Stack(train, test)
 
-# Remove ID column
-complete$id = NULL
-
 # Remove date column
 complete$date = NULL

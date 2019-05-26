@@ -114,7 +114,6 @@ test <- test[, c(2, 1, 21, 22, 23, 3:20)]
 Now I stack together the train and test dataset to procede with a more accurate analysis. I also eliminate the field __id__ and __date__ because they are not going to be relevant.
 ```{r}
 complete <- Stack(train, test)
-complete$id = NULL
 complete$date = NULL
 ```
 
@@ -160,7 +159,7 @@ Therefore, going forward I will only keep:
 
 Nonetheless, some considerations have to be made. The variables __condition__, __yr_renovated__, and __zipcode__ are going to be converted as factors further on in the analysis. Therefore, we still include them in the listof variables we are going to keep because we can not really interepret their value now since it is numeric, and as numeric it might not affect the correlation with _price_.
 ```{r}
-complete2 <- select(complete, "price", "bedrooms", "bathrooms", "sqft_living", "floors",
+complete2 <- select(complete, "id", "price", "bedrooms", "bathrooms", "sqft_living", "floors",
                     "waterfront", "view", "grade", "sqft_above", "sqft_basement", "lat",
                     "sqft_living15", "condition", "yr_renovated", "zipcode")
 ```
@@ -193,8 +192,6 @@ complete$PriceBin <- NULL
 
 In this section we are going to analyze the relationship of all the varaibles with our target, the variable _price_. Before doing this, I create a copy of the dataset, and I split it in *train* and *test*, based on the value of the variable price.
 ```{r}
-complete2 <- complete
-
 train2 <- split(complete2, complete2$price > 0)
 train2 <- train2[["TRUE"]]
 
@@ -553,13 +550,6 @@ model2
 ```
 The model scores an R2 of 0.8044, not better than the linear model I run before (1).
 
-### (3) Linear model (with log)
-
-Last, with our model we predictthe prices in the test dataset.
-```{r, warnings = FALSE}
-test4$price <- predict(model1, test4)
-```
-
 ### (3) Linear regression with LOG
 Now I try a __linear regression__ with the log of prices.
 
@@ -615,24 +605,21 @@ mape(train6$price, train6$pred)
 ```
 We get a MAPE score of `r round(mape(train6$price, train6$pred), 3)`, which is very good for our model.
 
-### Predict on the test set and export it
+## Predict on the test set and export it
 The third model was the best we got so far, with an R2 of 0.88 and a MAPE of 0.13, so we decide to deploy this one.
 
 Now we predict the prices on the test dataset.
 ```{r}
 test6$price <- predict(model3, test6)
+test6$price <- exp(test6$price)
 ```
 
 And I transform my test dataframe with just the ID and the price predicted.
 ```{r}
-test6 <- test6[, c("price")]
-test <- test[, c("id")]
-
-sumbission <- data.frame(test, test6)
-names(sumbission) <- c("id", "price")
+submission <- test6[, c("id", "price")]
 ```
 
 Last, I export my dataframe as a csv file.
 ```{r}
-write.csv(sumbission, "Alberto_Lombatti_submission.csv")
+write.csv(submission, "Alberto_Lombatti_submission.csv", row.names = FALSE)
 ```
